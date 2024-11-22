@@ -1,10 +1,15 @@
 import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import { SignJWT } from "jose";
+import { nanoid } from "nanoid";
 
 // Simple in-memory rate limiting
 const RATE_LIMIT_DURATION = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 5;
 const rateLimitStore: { [key: string]: { count: number, timestamp: number } } = {};
+
+// This should be a long, secure random string. In a real app, this would be an environment variable.
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function GET(request: Request) {
   const { userId } = auth();
@@ -41,10 +46,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User email not found" }, { status: 404 });
     }
 
-    // Generate JWT token with custom claims
-    const token = await auth().getToken({
-      template: "custom"
-    });
+    // Generate custom JWT token
+    const token = await new SignJWT({
+      userId: user.id,
+      email: primaryEmail,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setJti(nanoid())
+      .setIssuedAt()
+      .setExpirationTime("15m")
+      .sign(new TextEncoder().encode(JWT_SECRET));
 
     // Return token and metadata
     return NextResponse.json({
