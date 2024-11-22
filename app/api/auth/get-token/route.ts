@@ -43,14 +43,14 @@ export async function GET(request: Request) {
 
     // Generate JWT token with custom claims
     const token = await auth().getToken({
-      template: "custom",
-      userId: user.id,
-      email: primaryEmail,
+      template: "custom"
     });
 
     // Return token and metadata
     return NextResponse.json({
       token,
+      userId: user.id,
+      email: primaryEmail,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now
     });
   } catch (error) {
