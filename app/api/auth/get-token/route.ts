@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
     // Generate JWT token
     const token = await auth().getToken({
-      template: "supabase"
+      template: "custom_token" // Use the name of your JWT template here
     });
 
     // Calculate expiration time (15 minutes from now)
