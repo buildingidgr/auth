@@ -29,22 +29,27 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Generate JWT token
-    const token = await auth().getToken({
-      template: "supabase"
-    });
+    // Get user details
+    const user = await auth().getUser(userId);
 
-    // Get current time and add 15 minutes for expiration
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    // Generate JWT token with custom claims
+    const token = await auth().createToken({
+      userId: user.id,
+      email: user.emailAddresses[0].emailAddress,
+      expiration: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+    });
 
     // Return token and metadata
     return NextResponse.json({
       token,
-      expiresAt,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     });
   } catch (error) {
     console.error("Error generating token:", error);
-    return NextResponse.json({ error: "Failed to generate token" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to generate token", 
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
