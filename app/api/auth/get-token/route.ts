@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 // Simple in-memory rate limiting
@@ -29,23 +29,39 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Get current user
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const primaryEmail = user.emailAddresses.find(email => email.id === user.primaryEmailAddressId)?.emailAddress;
+
+    if (!primaryEmail) {
+      return NextResponse.json({ error: "User email not found" }, { status: 404 });
+    }
+
     // Generate JWT token
     const token = await auth().getToken({
-      template: "supabase",
-      expiration: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+      template: "supabase"
     });
 
-    // Get token expiration time
-    const { exp } = JSON.parse(atob(token.split('.')[1]));
+    // Calculate expiration time (15 minutes from now)
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     // Return token and metadata
     return NextResponse.json({
       token,
-      expiresAt: new Date(exp * 1000).toISOString(),
+      userId: user.id,
+      email: primaryEmail,
+      expiresAt,
     });
   } catch (error) {
     console.error("Error generating token:", error);
-    return NextResponse.json({ error: "Failed to generate token" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to generate token", 
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
