@@ -8,6 +8,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const { isLoaded, signIn } = useSignIn()
 
   if (!isLoaded) {
@@ -17,6 +18,13 @@ export default function ForgotPassword() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setIsLoading(true)
+
+    if (!signIn) {
+      setError('Unable to access sign in. Please try again later.')
+      setIsLoading(false)
+      return
+    }
 
     try {
       await signIn.create({
@@ -26,7 +34,9 @@ export default function ForgotPassword() {
       setSuccess(true)
     } catch (err: any) {
       console.error('Error during password reset:', err)
-      setError(err.errors[0]?.message || 'An error occurred during password reset.')
+      setError(err.errors?.[0]?.message || 'An error occurred during password reset.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -62,9 +72,10 @@ export default function ForgotPassword() {
             <div>
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                Send reset instructions
+                {isLoading ? 'Processing...' : 'Send reset instructions'}
               </button>
             </div>
           </form>
