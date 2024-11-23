@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useSignIn, useSignUp } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function SSOCallback() {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn()
