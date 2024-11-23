@@ -16,6 +16,12 @@ export default function SSOCallback() {
   }, [isSignInLoaded, isSignUpLoaded])
 
   async function handleCallback() {
+    if (!signIn || !signUp) {
+      console.error('SignIn or SignUp is not available')
+      router.push('/login')
+      return
+    }
+
     try {
       const signInAttempt = await signIn.attemptFirstFactor({
         strategy: 'oauth_callback',
