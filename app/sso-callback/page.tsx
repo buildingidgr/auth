@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useSignIn, useSignUp } from '@clerk/nextjs'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function SSOCallback() {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn()
@@ -23,32 +23,41 @@ export default function SSOCallback() {
     }
 
     try {
-      const signInAttempt = await signIn.authenticateWithRedirect({
-        strategy: 'oauth_callback',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/dashboard',
+      const signInAttempt = await signIn.attemptFirstFactor({
+        strategy: "oauth",
+        redirectUrl: window.location.href,
+        redirectUrlComplete: "/dashboard",
       })
 
       if (signInAttempt.status === 'complete') {
         await setSignInActive({ session: signInAttempt.createdSessionId })
         router.push('/dashboard')
         return
+      } else {
+        console.log("Sign in not complete", signInAttempt)
       }
     } catch (error) {
       console.error('Error during sign in:', error)
+      if (error.errors && error.errors[0].code === 'form_identifier_not_found') {
+        console.log('User not found, attempting sign up')
+      } else {
+        throw error
+      }
     }
 
     try {
-      const signUpAttempt = await signUp.authenticateWithRedirect({
-        strategy: 'oauth_callback',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/dashboard',
+      const signUpAttempt = await signUp.attemptFirstFactor({
+        strategy: "oauth",
+        redirectUrl: window.location.href,
+        redirectUrlComplete: "/dashboard",
       })
 
       if (signUpAttempt.status === 'complete') {
         await setSignUpActive({ session: signUpAttempt.createdSessionId })
         router.push('/dashboard')
         return
+      } else {
+        console.log("Sign up not complete", signUpAttempt)
       }
     } catch (error) {
       console.error('Error during sign up:', error)
