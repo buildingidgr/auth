@@ -23,6 +23,12 @@ export default function Login() {
     setError('')
     setIsLoading(true)
 
+    if (!signIn) {
+      setError('Unable to access sign in. Please try again later.')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const result = await signIn.create({
         identifier: email,
@@ -38,13 +44,18 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error('Error during sign in:', err)
-      setError(err.errors[0]?.message || 'An error occurred during sign in.')
+      setError(err.errors?.[0]?.message || 'An error occurred during sign in.')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleOAuthSignIn = async (strategy: OAuthStrategy) => {
+    if (!signIn) {
+      setError('Unable to access sign in. Please try again later.')
+      return
+    }
+
     setError('')
     setIsLoading(true)
     try {
@@ -55,7 +66,7 @@ export default function Login() {
       })
     } catch (err: any) {
       console.error('Error during OAuth sign in:', err)
-      setError(err.errors[0]?.message || 'An error occurred during sign in.')
+      setError(err.errors?.[0]?.message || 'An error occurred during sign in.')
       setIsLoading(false)
     }
   }
