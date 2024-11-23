@@ -25,6 +25,12 @@ export default function Register() {
     setError('')
     setIsLoading(true)
 
+    if (!signUp) {
+      setError('Unable to access sign up. Please try again later.')
+      setIsLoading(false)
+      return
+    }
+
     if (!pendingVerification) {
       try {
         await signUp.create({
@@ -39,7 +45,7 @@ export default function Register() {
         setPendingVerification(true)
       } catch (err: any) {
         console.error('Error during sign up:', err)
-        setError(err.errors[0]?.message || 'An error occurred during sign up.')
+        setError(err.errors?.[0]?.message || 'An error occurred during sign up.')
       } finally {
         setIsLoading(false)
       }
@@ -57,7 +63,7 @@ export default function Register() {
         }
       } catch (err: any) {
         console.error('Error during verification:', err)
-        setError(err.errors[0]?.message || 'An error occurred during verification.')
+        setError(err.errors?.[0]?.message || 'An error occurred during verification.')
       } finally {
         setIsLoading(false)
       }
@@ -65,6 +71,11 @@ export default function Register() {
   }
 
   const handleOAuthSignUp = async (strategy: OAuthStrategy) => {
+    if (!signUp) {
+      setError('Unable to access sign up. Please try again later.')
+      return
+    }
+
     setError('')
     setIsLoading(true)
     try {
@@ -75,7 +86,7 @@ export default function Register() {
       })
     } catch (err: any) {
       console.error('Error during OAuth sign up:', err)
-      setError(err.errors[0]?.message || 'An error occurred during sign up.')
+      setError(err.errors?.[0]?.message || 'An error occurred during sign up.')
       setIsLoading(false)
     }
   }
@@ -101,8 +112,7 @@ export default function Register() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 
-py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
