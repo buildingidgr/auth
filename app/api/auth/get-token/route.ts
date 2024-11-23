@@ -1,6 +1,5 @@
-import { auth } from "@clerk/nextjs";
+import { auth, clerkClient } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs";
 import { SignJWT } from "jose";
 import { nanoid } from "nanoid";
 
@@ -15,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // Verify Clerk token
-    const clerkSession = await clerkClient.sessions.verifySession(clerkToken);
+    const clerkSession = await clerkClient.sessions.verifySession(clerkToken, clerkToken);
 
     if (!clerkSession) {
       return NextResponse.json({ error: "Invalid Clerk token" }, { status: 401 });
