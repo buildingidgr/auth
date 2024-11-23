@@ -1,36 +1,29 @@
-import { auth, currentUser } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import { clerkClient } from "@clerk/nextjs";
+import { SignJWT } from "jose";
+import { nanoid } from "nanoid";
 
-// Simple in-memory rate limiting
-const RATE_LIMIT_DURATION = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 5;
-const rateLimitStore: { [key: string]: { count: number, timestamp: number } } = {};
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-export async function GET(request: Request) {
-  const { userId } = auth();
-
-  // Check if user is authenticated
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Rate limiting
-  const clientIp = request.headers.get("x-forwarded-for") || "unknown";
-  const now = Date.now();
-  const userRateLimit = rateLimitStore[clientIp];
-
-  if (userRateLimit && now - userRateLimit.timestamp < RATE_LIMIT_DURATION) {
-    if (userRateLimit.count >= MAX_REQUESTS) {
-      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-    }
-    userRateLimit.count++;
-  } else {
-    rateLimitStore[clientIp] = { count: 1, timestamp: now };
-  }
-
+export async function POST(request: Request) {
   try {
-    // Get current user
-    const user = await currentUser();
+    const { clerkToken } = await request.json();
+
+    if (!clerkToken) {
+      return NextResponse.json({ error: "No Clerk token provided" }, { status: 400 });
+    }
+
+    // Verify Clerk token
+    const clerkSession = await clerkClient.sessions.verifySession(clerkToken);
+
+    if (!clerkSession) {
+      return NextResponse.json({ error: "Invalid Clerk token" }, { status: 401 });
+    }
+
+    const userId = clerkSession.userId;
+    const user = await clerkClient.users.getUser(userId);
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -41,25 +34,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User email not found" }, { status: 404 });
     }
 
-    // Generate JWT token
-    const token = await auth().getToken({
-      template: "custom_token" // Use the name of your JWT template here
-    });
+    // Generate Necha auth token
+    const nechaToken = await new SignJWT({
+      userId: user.id,
+      email: primaryEmail,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setJti(nanoid())
+      .setIssuedAt()
+      .setExpirationTime("15m")
+      .sign(new TextEncoder().encode(JWT_SECRET));
 
     // Calculate expiration time (15 minutes from now)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    // Return token and metadata
+    // Return Necha auth token and metadata
     return NextResponse.json({
-      token,
+      token: nechaToken,
       userId: user.id,
       email: primaryEmail,
       expiresAt,
     });
   } catch (error) {
-    console.error("Error generating token:", error);
+    console.error("Error exchanging token:", error);
     return NextResponse.json({ 
-      error: "Failed to generate token", 
+      error: "Failed to exchange token", 
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
