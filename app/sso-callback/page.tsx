@@ -23,9 +23,10 @@ export default function SSOCallback() {
     }
 
     try {
-      const signInAttempt = await signIn.attemptFirstFactor({
+      const signInAttempt = await signIn.authenticateWithRedirect({
         strategy: 'oauth_callback',
         redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/dashboard',
       })
 
       if (signInAttempt.status === 'complete') {
@@ -38,9 +39,10 @@ export default function SSOCallback() {
     }
 
     try {
-      const signUpAttempt = await signUp.attemptFirstFactor({
+      const signUpAttempt = await signUp.authenticateWithRedirect({
         strategy: 'oauth_callback',
         redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/dashboard',
       })
 
       if (signUpAttempt.status === 'complete') {
@@ -61,10 +63,10 @@ export default function SSOCallback() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Processing your sign in...
+            Processing your authentication...
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Please wait while we complete your authentication.
+            Please wait while we complete your sign-in or sign-up process.
           </p>
         </div>
       </div>
